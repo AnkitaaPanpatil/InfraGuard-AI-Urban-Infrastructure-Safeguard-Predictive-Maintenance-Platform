@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfraGuard — AI Urban Infrastructure Safeguard & Predictive Maintenance Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        infra: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                            950: '#083344'
+                        },
+                        sensorAmber: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706'
+                        },
+                        hazardRed: {
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            950: '#450a0a'
+                        },
+                        healthGreen: {
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            950: '#022c22'
+                        },
+                        steelDark: {
+                            800: '#172033',
+                            850: '#111827',
+                            900: '#0b1120',
+                            950: '#050914'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <!-- Leaflet.js Mapping Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050914;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        .glass-card {
+            background: rgba(11, 17, 32, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #0b1120;
+            color: #f8fafc;
+            border: 1px solid #1e293b;
+            border-radius: 0.85rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+        }
+        .leaflet-popup-tip {
+            background: #0b1120;
+        }
+
+        .pulse-beacon {
+            animation: pulse-ring 2.2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        @keyframes pulse-ring {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+
+        .scan-line {
+            background: linear-gradient(to bottom, transparent, rgba(6, 182, 212, 0.25), transparent);
+            animation: scan-down 3s ease-in-out infinite;
+        }
+        @keyframes scan-down {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1000%); }
+        }
+    </style>
+</head>
+<body class="bg-steelDark-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-infra-500 selection:text-slate-950">
+
+    <!-- Top Command Center Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-steelDark-900/90 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Brand Logo & Digital Twin Indicator -->
+            <div class="flex items-center gap-3.5 cursor-pointer" onclick="switchTab('map')">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-infra-600 via-cyan-500 to-sensorAmber-400 flex items-center justify-center text-slate-950 text-xl font-black shadow-lg shadow-infra-500/20">
+                    <i class="fa-solid fa-bridge-water"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white flex items-center gap-2">
+                        InfraGuard
+                        <span class="text-[10px] font-mono font-bold bg-infra-500/15 text-infra-400 px-2 py-0.5 rounded-full border border-infra-500/30 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-healthGreen-400 animate-pulse"></span> SHM Live Digital Twin
+                        </span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Urban Structural Health Monitoring & Predictive Catastrophe Prevention</p>
+                </div>
+            </div>
+
+            <!-- City Infrastructure Health & Sensor Health Badge -->
+            <div class="flex items-center gap-3 bg-steelDark-850 border border-slate-800 rounded-xl px-3.5 py-1.5 text-xs font-mono">
+                <div class="w-2.5 h-2.5 rounded-full bg-healthGreen-400 animate-ping"></div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] text-slate-400 uppercase tracking-wider">Metropolitan SHI Score</span>
+                    <span class="font-bold text-slate-200" id="headerShiScore">94.6 / 100 • Nominal</span>
+                </div>
+                <div class="border-l border-slate-700 pl-3 flex items-center gap-1.5">
+                    <span class="text-slate-400 text-[11px]">IoT Telemetry Nodes:</span>
+                    <span class="px-2 py-0.5 rounded bg-healthGreen-950 text-healthGreen-300 font-bold border border-healthGreen-800" id="headerSensorNodes">1,420 Active</span>
+                </div>
+            </div>
+
+            <!-- Emergency Actions & Stress Testing -->
+            <div class="flex items-center gap-2.5">
+                <button onclick="triggerSimulatedStructuralAnomaly()" class="px-3.5 py-2 bg-hazardRed-600 hover:bg-hazardRed-500 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center gap-2" title="Simulate micro-strain surge on primary bridge cable">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Simulate Anomaly</span>
+                </button>
+                <button onclick="openEmergencyLockoutModal()" class="px-3 py-2 bg-steelDark-800 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 font-semibold rounded-xl text-xs transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span class="hidden sm:inline">Rapid Containment SOP</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main Dashboard Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 lg:p-6 space-y-6">
+
+        <!-- Top Telemetry Metrics -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+            <div class="glass-card p-4 rounded-2xl flex flex-col justify-between hover:border-infra-500/40 transition">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Critical Monitored Assets</span>
+                    <i class="fa-solid fa-monument text-infra-400"></i>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span class="text-2xl font-bold font-mono text-slate-100" id="statAssetCount">18 Key Hubs</span>
+                    <span class="text-xs text-healthGreen-400 font-semibold flex items-center gap-1 font-mono">
+                        <i class="fa-solid fa-circle-check"></i> 100% Online
+                    </span>
+                </div>
+                <span class="text-[11px] text-slate-400 mt-1">Bridges, Tunnels, Aqueducts, Grids</span>
+            </div>
+
+            <div class="glass-card p-4 rounded-2xl flex flex-col justify-between hover:border-healthGreen-500/40 transition">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Disaster Loss Avoidance</span>
+                    <i class="fa-solid fa-sack-dollar text-healthGreen-400"></i>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span class="text-2xl font-bold font-mono text-slate-100" id="statDowntimeSaved">$4.25M</span>
+                    <span class="text-xs text-healthGreen-400 font-mono">FY 2026</span>
+                </div>
+                <span class="text-[11px] text-healthGreen-400 font-semibold">Pre-failure intervention savings</span>
+            </div>
+
+            <div class="glass-card p-4 rounded-2xl flex flex-col justify-between hover:border-sensorAmber-400/40 transition">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Active Micro-Anomalies</span>
+                    <i class="fa-solid fa-waveform-lines text-sensorAmber-400"></i>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span class="text-2xl font-bold font-mono text-slate-100" id="statActiveAnomalies">2 Flagged</span>
+                    <span class="text-xs text-sensorAmber-400 font-semibold">Tier 2 Warning</span>
+                </div>
+                <span class="text-[11px] text-slate-400">Vibration drift & pore pressure shift</span>
+            </div>
+
+            <div class="glass-card p-4 rounded-2xl flex flex-col justify-between hover:border-cyan-400/40 transition">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>Mean Time to Respond</span>
+                    <i class="fa-solid fa-truck-fast text-cyan-400"></i>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span class="text-2xl font-bold font-mono text-slate-100" id="statResponseTime">18.4 min</span>
+                    <span class="text-xs text-cyan-400 font-mono">Avg SLA: 45 min</span>
+                </div>
+                <span class="text-[11px] text-cyan-400 font-semibold">Rapid Civil Response Units</span>
+            </div>
+        </section>
+
+        <!-- Primary Navigation Tabs -->
+        <section class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div class="inline-flex rounded-xl bg-steelDark-900 p-1 border border-slate-800 text-xs font-semibold" role="tablist">
+                <button onclick="switchTab('map')" id="tabBtnMap" class="px-3.5 py-2 rounded-lg bg-infra-600 text-slate-950 font-bold transition flex items-center gap-2 shadow">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>GIS Digital Twin Map</span>
+                </button>
+                <button onclick="switchTab('waveform')" id="tabBtnWaveform" class="px-3.5 py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Acoustic & Strain Telemetry</span>
+                </button>
+                <button onclick="switchTab('predictive')" id="tabBtnPredictive" class="px-3.5 py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-2">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                    <span>Predictive RUL & Fatigue</span>
+                </button>
+                <button onclick="switchTab('dispatch')" id="tabBtnDispatch" class="px-3.5 py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <span>Maintenance Work Orders</span>
+                </button>
+                <button onclick="switchTab('copilot')" id="tabBtnCopilot" class="px-3.5 py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-2">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>AI Structural Engineer</span>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-healthGreen-400 animate-ping"></span>
+                <span>Piezoelectric & InSAR Satellite Synced</span>
+            </div>
+        </section>
+
+        <!-- TAB 1: GIS Digital Twin & Sensor Map -->
+        <section id="tabContentMap" class="space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Left 8 Cols: Leaflet GIS Interactive Asset Map -->
+                <div class="lg:col-span-8 glass-card p-4 rounded-2xl flex flex-col justify-between space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-2.5">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-satellite text-cyan-400"></i>
+                                Real-Time Metropolitan Digital Twin & InSAR Sensor Grid
+                            </h3>
+                            <p class="text-xs text-slate-400">Live monitoring of suspension bridges, transit tunnels, primary water mains, and power substations.</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs font-mono">
+                            <span class="flex items-center gap-1 text-healthGreen-400"><span class="w-2.5 h-2.5 rounded-full bg-healthGreen-400"></span> Nominal (&gt;90)</span>
+                            <span class="flex items-center gap-1 text-sensorAmber-400"><span class="w-2.5 h-2.5 rounded-full bg-sensorAmber-400"></span> Warning (70-89)</span>
+                            <span class="flex items-center gap-1 text-hazardRed-400"><span class="w-2.5 h-2.5 rounded-full bg-hazardRed-400"></span> Critical (&lt;70)</span>
+                        </div>
+                    </div>
+
+                    <!-- Map Container -->
+                    <div class="relative w-full h-[430px] rounded-xl overflow-hidden border border-slate-800">
+                        <div id="infraLeafletMap" class="w-full h-full z-0"></div>
+                        <div class="absolute bottom-3 left-3 z-[400] bg-steelDark-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-xs font-mono flex items-center gap-2">
+                            <i class="fa-solid fa-location-crosshairs text-infra-400"></i>
+                            <span id="mapCoordsLabel">Metropolitan Core Hub (18.9220° N, 72.8347° E)</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 font-mono pt-1">
+                        <span>Seismic Accelerometers: <strong class="text-slate-200">100% Online</strong></span>
+                        <span>Corrosion Rate Sensors: <strong class="text-healthGreen-400">0.02 mm/yr (Low)</strong></span>
+                        <button onclick="refreshSensorTelemetry()" class="text-infra-400 hover:text-infra-300 transition flex items-center gap-1">
+                            <i class="fa-solid fa-arrows-rotate"></i> Poll Sensor Gateway
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right 4 Cols: Filterable Asset Telemetry Inspector -->
+                <div class="lg:col-span-4 glass-card p-4 rounded-2xl flex flex-col justify-between space-y-3 border-t-2 border-t-cyan-500">
+                    <div class="border-b border-slate-800 pb-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Asset Health Directory</h4>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                                IoT Ranked
+                            </span>
+                        </div>
+                        
+                        <!-- Search & Filter Controls -->
+                        <div class="mt-3 space-y-2">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                                <input type="text" id="assetSearchInput" oninput="filterAssetsList()" placeholder="Search bridges, tunnels, aqueducts..." class="w-full bg-steelDark-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Asset Cards -->
+                    <div class="space-y-2.5 overflow-y-auto max-h-[330px] pr-1" id="assetsListContainer">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 2: Acoustic & Strain Waveform Analyzer -->
+        <section id="tabContentWaveform" class="space-y-5 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Left 8 Cols: Real-Time Waveform & FFT Harmonic Spectrum Canvas -->
+                <div class="lg:col-span-8 glass-card p-5 rounded-2xl space-y-4 border-t-2 border-t-infra-500">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                                    <i class="fa-solid fa-wave-square text-infra-400"></i>
+                                    Piezoelectric Dynamic Strain & Micro-Vibration Oscilloscope
+                                </h3>
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-infra-950 text-infra-300 border border-infra-800">
+                                    Live 100 Hz Stream
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5" id="waveformInspectAssetLabel">Inspecting: Gateway Suspension Cable Pier 4 (Sensor Node #SG-402)</p>
+                        </div>
+
+                        <div class="flex items-center gap-1.5 text-xs font-mono">
+                            <span class="flex items-center gap-1 text-cyan-400"><span class="w-3 h-0.5 bg-cyan-400 inline-block"></span> Raw Strain ($\mu\epsilon$)</span>
+                            <span class="flex items-center gap-1 text-sensorAmber-400"><span class="w-3 h-0.5 bg-sensorAmber-400 inline-block"></span> Baseline Tolerance</span>
+                        </div>
+                    </div>
+
+                    <!-- Waveform Canvas Container -->
+                    <div class="relative w-full h-64 bg-steelDark-950/90 rounded-xl p-3 border border-slate-800/80 overflow-hidden">
+                        <canvas id="waveformCanvas" class="w-full h-full block"></canvas>
+                        <div class="absolute top-3 right-3 text-[11px] font-mono bg-steelDark-900/80 border border-slate-700 px-2.5 py-1 rounded-lg text-slate-300">
+                            Sampling Rate: <strong>250 kS/s</strong>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 text-xs font-mono pt-1">
+                        <div class="p-2.5 rounded-xl bg-steelDark-950 border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block">PEAK MICROSTRAIN</span>
+                            <span class="font-bold text-cyan-300 text-sm" id="metricPeakStrain">428 $\mu\epsilon$</span>
+                            <span class="text-[10px] text-healthGreen-400 block">Within 750 $\mu\epsilon$ Safe Zone</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-steelDark-950 border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block">RESONANCE FREQUENCY</span>
+                            <span class="font-bold text-slate-200 text-sm" id="metricResonantFreq">3.42 Hz</span>
+                            <span class="text-[10px] text-healthGreen-400 block">Design Modal: 3.50 Hz</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-steelDark-950 border border-slate-800">
+                            <span class="text-[10px] text-slate-400 block">FFT DAMPING RATIO</span>
+                            <span class="font-bold text-sensorAmber-300 text-sm" id="metricDampingRatio">1.82%</span>
+                            <span class="text-[10px] text-sensorAmber-400 block">Slight Friction Drift</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right 4 Cols: Live Telemetry Feeds & Structural Risk Scoring -->
+                <div class="lg:col-span-4 glass-card p-5 rounded-2xl space-y-4 border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <div class="border-b border-slate-800 pb-2">
+                            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-microchip text-infra-400"></i>
+                                Real-Time Sensor Telemetry
+                            </h4>
+                            <p class="text-[11px] text-slate-400 mt-1">Multi-modal physical transducer diagnostics.</p>
+                        </div>
+
+                        <div class="mt-4 space-y-3 text-xs font-mono">
+                            <div class="p-3 rounded-xl bg-steelDark-950 border border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <span class="text-slate-300 font-semibold block">Tilt & Inclinometer</span>
+                                    <span class="text-[10px] text-slate-400">Dual-axis MEMS (Z-Axis)</span>
+                                </div>
+                                <span class="text-healthGreen-400 font-bold" id="telemetryTilt">+0.014° (Normal)</span>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-steelDark-950 border border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <span class="text-slate-300 font-semibold block">Thermal Expansion</span>
+                                    <span class="text-[10px] text-slate-400">Fiber Bragg Grating (FBG)</span>
+                                </div>
+                                <span class="text-cyan-300 font-bold" id="telemetryTemp">31.4°C (+1.2 mm)</span>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-steelDark-950 border border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <span class="text-slate-300 font-semibold block">Acoustic Emission Hits</span>
+                                    <span class="text-[10px] text-slate-400">Micro-crack sensor rate</span>
+                                </div>
+                                <span class="text-sensorAmber-400 font-bold" id="telemetryAcoustic">4 hits / hr</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 rounded-xl bg-steelDark-950 border border-slate-800 text-xs space-y-1">
+                            <span class="font-bold text-cyan-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-virus"></i> NDT Sensor Integrity
+                            </span>
+                            <p class="text-[11px] text-slate-400">
+                                12 of 12 multi-point fiber optic strain sensors reporting verified packets with zero frame drop over LoRaWAN grid.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button onclick="injectSeismicLoadSimulation()" class="w-full py-2.5 bg-steelDark-800 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 font-bold rounded-xl text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-earth-americas"></i>
+                        <span>Simulate Heavy Freight Train Transient</span>
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 3: Predictive RUL & Structural Fatigue Forecasting -->
+        <section id="tabContentPredictive" class="space-y-5 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Left 7 Cols: Fatigue Degradation Curves & RUL Horizon -->
+                <div class="lg:col-span-7 glass-card p-5 rounded-2xl space-y-4 border-t-2 border-t-sensorAmber-500">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-area text-sensorAmber-400"></i>
+                                Paris-Erdogan Fatigue Propagation & RUL Horizon
+                            </h3>
+                            <p class="text-xs text-slate-400">Machine learning survival analysis computing micro-crack growth rate under cumulative cyclic loading.</p>
+                        </div>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sensorAmber-950 text-sensorAmber-300 border border-sensorAmber-800">
+                            Neural Weibull Model
+                        </span>
+                    </div>
+
+                    <!-- Interactive Asset Lifespan Health Cards -->
+                    <div class="space-y-3" id="predictiveAssetList">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-steelDark-950 border border-slate-800 space-y-2 text-xs">
+                        <span class="font-bold text-sensorAmber-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-lightbulb"></i> Optimization Strategy
+                        </span>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            Implementing targeted carbon fiber reinforced polymer (CFRP) composite wraps on the <strong>Central Metro Tunnel Segment 14</strong> by <strong>November 2026</strong> extends structural design lifespan by <strong>18 years</strong>, preventing an estimated $14.8M emergency bypass replacement.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right 5 Cols: Preventive Retrofit Cost vs Disaster Comparison -->
+                <div class="lg:col-span-5 glass-card p-5 rounded-2xl space-y-4 border border-slate-800">
+                    <div class="border-b border-slate-800 pb-2">
+                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-scale-balanced text-healthGreen-400"></i>
+                            Cost-Benefit ROI Modeling
+                        </h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Financial rationale of proactive intervention vs reactive emergency rebuilding.</p>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3.5 rounded-xl bg-steelDark-950 border border-slate-800 space-y-2 font-mono">
+                            <div class="flex justify-between items-center text-slate-300">
+                                <span>Proactive Micro-Grouting:</span>
+                                <span class="font-bold text-healthGreen-400">$64,000</span>
+                            </div>
+                            <div class="flex justify-between items-center text-slate-300">
+                                <span>Reactive Failure Cost:</span>
+                                <span class="font-bold text-hazardRed-400">$8,200,000</span>
+                            </div>
+                            <div class="flex justify-between items-center border-t border-slate-800 pt-2 text-slate-200">
+                                <span>Net Capital Efficiency:</span>
+                                <span class="font-bold text-cyan-300">128x ROI</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-steelDark-950 border border-slate-800 space-y-2">
+                            <span class="font-bold text-slate-200 text-xs block">Carbon Footprint Saved</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-2xl font-bold font-mono text-healthGreen-400">1,840 MT CO₂e</span>
+                                <span class="text-[10px] text-slate-400">Embodied carbon saved</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400">
+                                Avoiding emergency Portland cement concrete replacement preserves structural carbon budgets.
+                            </p>
+                        </div>
+
+                        <button onclick="exportPredictiveEngineeringReport()" class="w-full py-2.5 bg-gradient-to-r from-healthGreen-600 to-emerald-500 hover:from-healthGreen-500 hover:to-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export Municipal Capital Expenditure Plan</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 4: Maintenance Work Orders & Field Dispatch -->
+        <section id="tabContentDispatch" class="space-y-5 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Left 8 Cols: Field Work Order Pipeline -->
+                <div class="lg:col-span-8 glass-card p-5 rounded-2xl space-y-4 border-t-2 border-t-cyan-500">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-truck-ramp-box text-cyan-400"></i>
+                                Structural Engineering Field Work Order Dispatch
+                            </h3>
+                            <p class="text-xs text-slate-400">Automated tickets routed to certified NDT technicians with GPS coordinates and repair protocols.</p>
+                        </div>
+                        <button onclick="openNewWorkOrderModal()" class="px-3.5 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Create Work Order</span>
+                        </button>
+                    </div>
+
+                    <!-- Work Orders Stream -->
+                    <div class="space-y-3" id="workOrdersContainer">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+                <!-- Right 4 Cols: Certified Field Crew Readiness -->
+                <div class="lg:col-span-4 glass-card p-5 rounded-2xl space-y-4 border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <div class="border-b border-slate-800 pb-2">
+                            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-helmet-safety text-sensorAmber-400"></i>
+                                Rapid Response Teams
+                            </h4>
+                            <p class="text-[11px] text-slate-400 mt-1">Specialized civil engineering crews on standby.</p>
+                        </div>
+
+                        <!-- Response Crews Directory -->
+                        <div class="mt-4 space-y-3" id="responseCrewsList">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-steelDark-950 border border-slate-800 text-xs space-y-1">
+                        <span class="font-bold text-cyan-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-satellite-dish"></i> Telematics Dispatch
+                        </span>
+                        <p class="text-[11px] text-slate-400">
+                            Crew vehicles equipped with ground-penetrating radar (GPR) and ultrasonic flaw detectors are dynamically dispatched based on nearest GIS coordinates.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 5: AI Structural Diagnostics & Incident Copilot (Gemini) -->
+        <section id="tabContentCopilot" class="space-y-5 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Left 8 Cols: AI Incident Advisor Chat -->
+                <div class="lg:col-span-8 glass-card p-5 rounded-2xl space-y-4 border-t-2 border-t-infra-500">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-robot text-infra-400"></i>
+                                InfraGuard Copilot — Lead Civil & Structural Diagnostics AI
+                            </h3>
+                            <p class="text-xs text-slate-400">Trained on ASCE, Eurocode, and FEMA guidelines for rapid structural integrity analysis and mitigation.</p>
+                        </div>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-infra-950 text-infra-300 border border-infra-800">
+                            Gemini 3 Flash
+                        </span>
+                    </div>
+
+                    <!-- Chat Message Stream -->
+                    <div class="h-64 overflow-y-auto space-y-3 pr-2 text-xs" id="chatMessageHistory">
+                        <div class="p-3.5 rounded-xl bg-steelDark-950 border border-slate-800 space-y-1.5">
+                            <div class="flex items-center gap-2 text-infra-400 font-bold">
+                                <i class="fa-solid fa-brain"></i>
+                                <span>InfraGuard Diagnostic Core</span>
+                            </div>
+                            <p class="text-slate-300 leading-relaxed text-[11px]">
+                                Command Center initialized. I am continuously monitoring stress-strain tensors, harmonic natural frequencies, and pore water pressures across all 18 metropolitan asset sectors. Which asset telemetry or anomaly would you like me to evaluate?
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Shortcut Chips -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                        <button onclick="sendQuickAiQuery('Evaluate the micro-strain drift on the East Gateway Bridge. Should we restrict heavy freight traffic?')" class="px-2.5 py-1 rounded-lg bg-steelDark-850 hover:bg-slate-800 border border-slate-800 text-slate-300 whitespace-nowrap">
+                            🌉 Bridge Cable Microstrain Audit
+                        </button>
+                        <button onclick="sendQuickAiQuery('What are the critical failure thresholds for pore pressure and lining deflection in underwater transit tunnels?')" class="px-2.5 py-1 rounded-lg bg-steelDark-850 hover:bg-slate-800 border border-slate-800 text-slate-300 whitespace-nowrap">
+                            🚇 Tunnel Deflection Tolerances
+                        </button>
+                        <button onclick="sendQuickAiQuery('Provide an emergency containment protocol for concrete spalling and post-tension tendon corrosion.')" class="px-2.5 py-1 rounded-lg bg-steelDark-850 hover:bg-slate-800 border border-slate-800 text-slate-300 whitespace-nowrap">
+                            🛡️ Concrete Spalling Emergency SOP
+                        </button>
+                    </div>
+
+                    <!-- Input Bar -->
+                    <div class="flex gap-2">
+                        <input type="text" id="aiQueryInput" placeholder="Ask about structural stress tensors, ASTM testing protocols, or emergency shoring..." class="flex-1 bg-steelDark-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-infra-500">
+                        <button onclick="submitAiStructuralQuery()" id="btnSubmitAiQuery" class="px-4 py-2.5 bg-gradient-to-r from-infra-600 to-cyan-500 hover:from-infra-500 hover:to-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Analyze</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right 4 Cols: Active Engineering Sensor Gazettes -->
+                <div class="lg:col-span-4 glass-card p-5 rounded-2xl space-y-4">
+                    <div class="border-b border-slate-800 pb-2">
+                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Civil Engineering Standards</h4>
+                        <p class="text-[11px] text-slate-400">Calibrated safety boundaries in force.</p>
+                    </div>
+
+                    <div class="space-y-3 text-xs" id="engineeringStandardsList">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal 1: Rapid Containment SOP Modal -->
+    <div id="lockoutModal" class="fixed inset-0 z-50 bg-steelDark-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card bg-steelDark-900 border border-hazardRed-500/40 rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-hazardRed-500/20 text-hazardRed-400 flex items-center justify-center text-base">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white text-sm">Emergency Structural Containment Protocol</h4>
+                        <p class="text-xs text-slate-400">Automatic Traffic Restriction & Municipal Rail Divert</p>
+                    </div>
+                </div>
+                <button onclick="closeEmergencyLockoutModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-steelDark-950 border border-slate-800 space-y-2 text-xs">
+                <span class="font-bold text-hazardRed-400 block"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Rapid Safeguard Mechanism</span>
+                <p class="text-slate-300 leading-relaxed text-[11px]">
+                    Activating rapid containment automatically interfaces with municipal smart traffic signals, restricting commercial trucks over 15 tons, throttling speed limits to 30 km/h, and paging the on-duty Chief Structural Inspector.
+                </p>
+            </div>
+
+            <div class="space-y-2.5 text-xs font-mono">
+                <label class="flex items-center justify-between p-2.5 rounded-xl bg-steelDark-950 border border-slate-800 cursor-pointer">
+                    <span class="text-slate-200">Dynamic Lane Closure (Outer Freight Lanes)</span>
+                    <input type="checkbox" checked class="accent-infra-500 rounded">
+                </label>
+                <label class="flex items-center justify-between p-2.5 rounded-xl bg-steelDark-950 border border-slate-800 cursor-pointer">
+                    <span class="text-slate-200">Transit Metro Speed Derate (-40%)</span>
+                    <input type="checkbox" checked class="accent-infra-500 rounded">
+                </label>
+                <label class="flex items-center justify-between p-2.5 rounded-xl bg-steelDark-950 border border-slate-800 cursor-pointer">
+                    <span class="text-slate-200">Broadcast Digital Variable Message Signs (VMS)</span>
+                    <input type="checkbox" checked class="accent-infra-500 rounded">
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeEmergencyLockoutModal()" class="px-4 py-2 bg-steelDark-800 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold">Cancel</button>
+                <button onclick="executeEmergencyContainmentAction()" class="px-4 py-2 bg-hazardRed-600 hover:bg-hazardRed-500 text-white font-bold rounded-xl text-xs transition shadow">
+                    Execute Protective Safeguard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Create Work Order Modal -->
+    <div id="workOrderModal" class="fixed inset-0 z-50 bg-steelDark-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card bg-steelDark-900 border border-cyan-500/40 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h4 class="font-bold text-white text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-screwdriver-wrench text-cyan-400"></i>
+                    <span>Issue Predictive Maintenance Work Order</span>
+                </h4>
+                <button onclick="closeNewWorkOrderModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Target Infrastructure Asset</label>
+                    <select id="modalOrderAsset" class="w-full bg-steelDark-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono">
+                        <option value="East Gateway Suspension Bridge">East Gateway Suspension Bridge (Pier 4)</option>
+                        <option value="Central Metro Tunnel Segment 14">Central Metro Tunnel Segment 14</option>
+                        <option value="Municipal Aqueduct Viaduct 3">Municipal Aqueduct Viaduct 3</option>
+                        <option value="Harbor Overpass Flyover Ramp B">Harbor Overpass Flyover Ramp B</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Maintenance Type & Action</label>
+                    <input type="text" id="modalOrderTitle" placeholder="e.g. Ultrasonic flaw scan & bearing grease injection" class="w-full bg-steelDark-950 border border-slate-700 rounded-xl p-2.5 text-slate-100">
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Priority & SLA Window</label>
+                    <select id="modalOrderPriority" class="w-full bg-steelDark-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono">
+                        <option value="High (24-Hour SLA)">High Priority (24-Hour Resolution Window)</option>
+                        <option value="Moderate (72-Hour SLA)" selected>Moderate Priority (72-Hour Preventive)</option>
+                        <option value="Routine (7-Day SLA)">Routine Scheduled Inspection</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeNewWorkOrderModal()" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white text-xs">Cancel</button>
+                <button onclick="submitNewWorkOrder()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition">Dispatch Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Feedback Overlay -->
+    <div id="infraToast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 max-w-sm bg-steelDark-900 border border-slate-700 p-3.5 rounded-xl shadow-2xl flex items-center gap-3">
+        <div id="toastIconContainer" class="w-8 h-8 rounded-lg bg-infra-500/20 text-infra-400 flex items-center justify-center text-base flex-shrink-0">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div class="flex-1 text-xs">
+            <div id="toastTitleText" class="font-bold text-slate-100">InfraGuard Telemetry</div>
+            <div id="toastDetailText" class="text-slate-400 text-[11px]">Telemetry telemetry verified</div>
+        </div>
+        <button onclick="hideInfraToast()" class="text-slate-500 hover:text-slate-300">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <script>
+        // Web Audio Synthesizer for high-fidelity acoustic feedback
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playChime(type = 'success') {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+                } else if (type === 'alert') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.45);
+                } else if (type === 'pulse') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }
+            } catch (e) {
+                console.warn('Audio fallback:', e);
+            }
+        }
+
+        // Central Application State
+        const state = {
+            activeTab: 'map',
+            shiOverall: 94.6,
+            activeAnomalies: 2,
+            map: null,
+            markersGroup: null,
+            waveformAnimationId: null,
+            waveformTime: 0,
+            simulatedSurgeActive: false,
+            assets: [
+                {
+                    id: 'ast_1',
+                    name: 'East Gateway Suspension Bridge',
+                    type: 'Cable-Stayed Bridge',
+                    lat: 18.9280,
+                    lng: 72.8390,
+                    shi: 78, // Alert
+                    status: 'Warning (Harmonic Vibration Drift)',
+                    statusColor: 'text-sensorAmber-400',
+                    badge: 'bg-sensorAmber-950 text-sensorAmber-400 border border-sensorAmber-800',
+                    strain: '640 microstrain',
+                    sensorsCount: 42,
+                    rulYears: 4.2,
+                    icon: 'fa-bridge'
+                },
+                {
+                    id: 'ast_2',
+                    name: 'Central Metro Transit Tunnel #14',
+                    type: 'Subsurface Transit Tube',
+                    lat: 18.9350,
+                    lng: 72.8280,
+                    shi: 84, // Moderate
+                    status: 'Minor Water Ingress Rate Deviation',
+                    statusColor: 'text-sensorAmber-400',
+                    badge: 'bg-sensorAmber-950 text-sensorAmber-400 border border-sensorAmber-800',
+                    strain: '310 microstrain',
+                    sensorsCount: 36,
+                    rulYears: 7.8,
+                    icon: 'fa-tunnel'
+                },
+                {
+                    id: 'ast_3',
+                    name: 'North Aqueduct Pressure Viaduct 3',
+                    type: 'High-Volume Water Main',
+                    lat: 18.9180,
+                    lng: 72.8220,
+                    shi: 97, // Healthy
+                    status: 'Optimal Flow Dynamics',
+                    statusColor: 'text-healthGreen-400',
+                    badge: 'bg-healthGreen-950 text-healthGreen-300 border border-healthGreen-800',
+                    strain: '120 microstrain',
+                    sensorsCount: 24,
+                    rulYears: 24.5,
+                    icon: 'fa-faucet-drip'
+                },
+                {
+                    id: 'ast_4',
+                    name: 'Harbor Overpass Flyover Ramp B',
+                    type: 'Prestressed Concrete Flyover',
+                    lat: 18.9140,
+                    lng: 72.8450,
+                    shi: 96, // Healthy
+                    status: 'Nominal Cyclic Deflection',
+                    statusColor: 'text-healthGreen-400',
+                    badge: 'bg-healthGreen-950 text-healthGreen-300 border border-healthGreen-800',
+                    strain: '180 microstrain',
+                    sensorsCount: 18,
+                    rulYears: 19.1,
+                    icon: 'fa-road'
+                }
+            ],
+            workOrders: [
+                {
+                    id: 'WO-2026-881',
+                    asset: 'East Gateway Suspension Bridge',
+                    title: 'Ultrasonic non-destructive testing on Stay Cable 4B anchor plate',
+                    assignedCrew: 'Alpha Crew (Structural NDT Specialists)',
+                    sla: '14 Hours remaining',
+                    status: 'Dispatched & En Route',
+                    statusBadge: 'bg-sensorAmber-950 text-sensorAmber-400 border border-sensorAmber-800'
+                },
+                {
+                    id: 'WO-2026-842',
+                    asset: 'Central Metro Transit Tunnel #14',
+                    title: 'Pore pressure piezometer recalibration and polyurethane seal injection',
+                    assignedCrew: 'Bravo Geotechnical Ingress Team',
+                    sla: '38 Hours remaining',
+                    status: 'Parts Staged at Depot',
+                    statusBadge: 'bg-steelDark-850 text-slate-300 border border-slate-700'
+                },
+                {
+                    id: 'WO-2026-790',
+                    asset: 'North Aqueduct Viaduct 3',
+                    title: 'Acoustic leak sensor firmware update and cathodic protection test',
+                    assignedCrew: 'Delta Hydraulic Maintenance Unit',
+                    sla: 'Closed within SLA',
+                    status: 'Resolved & Verified',
+                    statusBadge: 'bg-healthGreen-950 text-healthGreen-300 border border-healthGreen-800'
+                }
+            ],
+            crews: [
+                { name: 'Team Alpha: Advanced NDT & Acoustic', lead: 'Eng. Vikram Sethi', loc: 'Downtown Depot (3.2 km away)', status: 'Active on WO-881' },
+                { name: 'Team Bravo: Geotechnical & Tunnel Grout', lead: 'Eng. Priya Nair', loc: 'West Portal Staging (4.8 km)', status: 'Standby Ready' },
+                { name: 'Team Charlie: Substation & Grid Telemetry', lead: 'Eng. Marcus Reed', loc: 'Substation Yard (6.1 km)', status: 'Standby Ready' }
+            ],
+            standards: [
+                { title: 'ASCE 7-22 Bridge Dynamic Impact', limit: 'Peak Microstrain < 750 $\mu\epsilon$', status: 'Compliant' },
+                { title: 'Eurocode 3 Fatigue Category 125', limit: 'Delta Stress < 42 MPa per 2M cycles', status: 'Compliant' },
+                { title: 'FEMA Tunnel Water Ingress Standard', limit: 'Pore Differential < 1.4 Bar', status: 'Alert on Tube 14' }
+            ]
+        };
+
+        // Initialization on DOM Load
+        window.addEventListener('DOMContentLoaded', () => {
+            initLeafletMap();
+            renderAssetsList();
+            renderPredictiveAssetList();
+            renderWorkOrders();
+            renderCrewsList();
+            renderStandardsList();
+            initWaveformCanvas();
+
+            // AI chat Enter key trigger
+            document.getElementById('aiQueryInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') submitAiStructuralQuery();
+            });
+        });
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            const tabs = ['map', 'waveform', 'predictive', 'dispatch', 'copilot'];
+            
+            tabs.forEach(t => {
+                const el = document.getElementById(`tabContent${capitalize(t)}`);
+                const btn = document.getElementById(`tabBtn${capitalize(t)}`);
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                    btn.className = "px-3.5 py-2 rounded-lg bg-infra-600 text-slate-950 font-bold transition flex items-center gap-2 shadow";
+                } else {
+                    el.classList.add('hidden');
+                    btn.className = "px-3.5 py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-2";
+                }
+            });
+
+            if (tabId === 'map' && state.map) {
+                setTimeout(() => state.map.invalidateSize(), 120);
+            }
+        }
+
+        function capitalize(s) {
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        // Initialize GIS Leaflet Map
+        function initLeafletMap() {
+            if (state.map) return;
+
+            state.map = L.map('infraLeafletMap', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView([18.9260, 72.8340], 14);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                subdomains: 'abcd',
+            }).addTo(state.map);
+
+            state.markersGroup = L.layerGroup().addTo(state.map);
+            plotAssetMarkers();
+        }
+
+        function plotAssetMarkers() {
+            state.markersGroup.clearLayers();
+
+            state.assets.forEach(ast => {
+                let markerBorder = 'border-healthGreen-400 text-healthGreen-400';
+                if (ast.shi < 75) markerBorder = 'border-hazardRed-400 text-hazardRed-400 animate-pulse';
+                else if (ast.shi < 90) markerBorder = 'border-sensorAmber-400 text-sensorAmber-400';
+
+                const iconHtml = `
+                    <div class="px-2.5 py-1 rounded-xl bg-steelDark-900 border-2 ${markerBorder} font-bold font-mono text-[10px] shadow-xl flex items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid ${ast.icon}"></i>
+                        <span>${ast.name.split(' ')[0]} • SHI ${ast.shi}</span>
+                    </div>
+                `;
+
+                const markerIcon = L.divIcon({
+                    html: iconHtml,
+                    className: 'custom-infra-marker',
+                    iconSize: [120, 28],
+                    iconAnchor: [60, 14]
+                });
+
+                const m = L.marker([ast.lat, ast.lng], { icon: markerIcon }).addTo(state.markersGroup);
+                m.bindPopup(`
+                    <div class="p-1.5 space-y-1.5 text-xs font-sans">
+                        <div class="font-bold text-white text-sm">${ast.name}</div>
+                        <div class="text-[11px] text-slate-400">${ast.type} • ${ast.sensorsCount} Sensors Online</div>
+                        <div class="flex items-center justify-between text-[11px] font-mono pt-1 border-t border-slate-800">
+                            <span>Health Score:</span>
+                            <span class="font-bold ${ast.statusColor}">SHI ${ast.shi}/100</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] font-mono">
+                            <span>Microstrain:</span>
+                            <span class="text-cyan-300 font-bold">${ast.strain}</span>
+                        </div>
+                        <button onclick="focusWaveformAnalysis('${ast.id}')" class="mt-2 w-full py-1 bg-infra-600 hover:bg-infra-500 text-slate-950 font-bold rounded-lg text-[10px] font-mono transition">
+                            Inspect Waveform Telemetry
+                        </button>
+                    </div>
+                `);
+            });
+        }
+
+        function refreshSensorTelemetry() {
+            plotAssetMarkers();
+            playChime('pulse');
+            showInfraToast("IoT sensor telemetry gateway re-synchronized across 1,420 nodes", "fa-arrows-rotate");
+        }
+
+        // Render Asset Directory List
+        function renderAssetsList() {
+            const container = document.getElementById('assetsListContainer');
+            container.innerHTML = '';
+
+            const search = (document.getElementById('assetSearchInput')?.value || '').toLowerCase();
+            const filtered = state.assets.filter(a => a.name.toLowerCase().includes(search) || a.type.toLowerCase().includes(search));
+
+            filtered.forEach(a => {
+                const card = document.createElement('div');
+                card.className = "p-3 rounded-xl bg-steelDark-950 border border-slate-800 hover:border-cyan-500/40 transition cursor-pointer space-y-2";
+                card.onclick = () => {
+                    if (state.map) {
+                        state.map.flyTo([a.lat, a.lng], 16, { duration: 1.2 });
+                    }
+                    showInfraToast(`Focused digital twin on ${a.name}`, 'fa-location-dot');
+                };
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-200 text-xs">${a.name}</span>
+                        <span class="text-[9px] font-mono px-2 py-0.5 rounded-full ${a.badge}">SHI ${a.shi}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                        <span><i class="fa-solid ${a.icon} mr-1 text-cyan-400"></i>${a.type}</span>
+                        <span class="${a.statusColor} font-semibold">${a.strain}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterAssetsList() {
+            renderAssetsList();
+        }
+
+        function focusWaveformAnalysis(assetId) {
+            const asset = state.assets.find(a => a.id === assetId);
+            if (!asset) return;
+
+            document.getElementById('waveformInspectAssetLabel').textContent = `Inspecting: ${asset.name} (${asset.type})`;
+            switchTab('waveform');
+            playChime('success');
+            showInfraToast(`Loaded high-speed waveform stream for ${asset.name}`, 'fa-wave-square');
+        }
+
+        // HTML5 Canvas Piezoelectric Oscilloscope
+        function initWaveformCanvas() {
+            const canvas = document.getElementById('waveformCanvas');
+            if (!canvas) return;
+
+            function animateWaveform() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                const w = rect.width;
+                const h = rect.height;
+
+                ctx.clearRect(0, 0, w, h);
+
+                // Grid lines
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < w; x += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < h; y += 35) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+
+                // Tolerance bounds lines
+                ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(0, h * 0.25);
+                ctx.lineTo(w, h * 0.25);
+                ctx.moveTo(0, h * 0.75);
+                ctx.lineTo(w, h * 0.75);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw Live Dynamic Strain Waveform
+                ctx.strokeStyle = '#06b6d4';
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+
+                state.waveformTime += 0.04;
+                const surgeFactor = state.simulatedSurgeActive ? 2.8 : 1.0;
+
+                for (let x = 0; x < w; x++) {
+                    const normX = x / w;
+                    const harmonic1 = Math.sin(normX * 18 + state.waveformTime * 3) * (h * 0.12 * surgeFactor);
+                    const harmonic2 = Math.cos(normX * 42 - state.waveformTime * 5) * (h * 0.05 * surgeFactor);
+                    const noise = (Math.random() - 0.5) * (h * 0.025);
+                    const y = (h * 0.5) + harmonic1 + harmonic2 + noise;
+
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                state.waveformAnimationId = requestAnimationFrame(animateWaveform);
+            }
+
+            animateWaveform();
+        }
+
+        function injectSeismicLoadSimulation() {
+            state.simulatedSurgeActive = true;
+            document.getElementById('metricPeakStrain').textContent = '692 microstrain';
+            document.getElementById('metricPeakStrain').className = 'font-bold text-sensorAmber-400 text-sm';
+            playChime('alert');
+            showInfraToast("Heavy Freight Transient injected: Transient strain spikes captured", "fa-triangle-exclamation");
+
+            setTimeout(() => {
+                state.simulatedSurgeActive = false;
+                document.getElementById('metricPeakStrain').textContent = '428 microstrain';
+                document.getElementById('metricPeakStrain').className = 'font-bold text-cyan-300 text-sm';
+            }, 6000);
+        }
+
+        // Render Predictive Lifespan Assets
+        function renderPredictiveAssetList() {
+            const container = document.getElementById('predictiveAssetList');
+            container.innerHTML = '';
+
+            state.assets.forEach(a => {
+                const card = document.createElement('div');
+                card.className = "p-3.5 rounded-xl bg-steelDark-950 border border-slate-800 space-y-2 text-xs";
+                
+                // Progress width based on RUL
+                const rulPct = Math.min(100, Math.max(15, (a.rulYears / 25) * 100));
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between font-mono">
+                        <span class="font-bold text-slate-200">${a.name}</span>
+                        <span class="${a.rulYears < 5 ? 'text-sensorAmber-400' : 'text-healthGreen-400'} font-bold">
+                            RUL: ${a.rulYears} Years Remaining
+                        </span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="${a.rulYears < 5 ? 'bg-sensorAmber-400' : 'bg-healthGreen-400'} h-full rounded-full transition-all duration-500" style="width: ${rulPct}%"></div>
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+                        <span>Fatigue Model: Weibull Accelerated</span>
+                        <span>Next Scheduled Retrofit: ${a.rulYears < 5 ? 'Q4 2026 (Urgent)' : 'Routine 2032'}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Render Work Orders
+        function renderWorkOrders() {
+            const container = document.getElementById('workOrdersContainer');
+            container.innerHTML = '';
+
+            state.workOrders.forEach(wo => {
+                const item = document.createElement('div');
+                item.className = "p-4 rounded-xl bg-steelDark-950 border border-slate-800 space-y-2 hover:border-cyan-500/40 transition text-xs";
+                item.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <span class="font-bold text-slate-100 text-sm block">${wo.title}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">Target: ${wo.asset} • Crew: ${wo.assignedCrew}</span>
+                        </div>
+                        <span class="text-[9px] font-mono px-2 py-0.5 rounded-full ${wo.statusBadge} whitespace-nowrap">
+                            ${wo.status}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-850">
+                        <span>Work Order: <strong class="text-slate-200">${wo.id}</strong></span>
+                        <span class="text-cyan-400"><i class="fa-regular fa-clock mr-1"></i>SLA: ${wo.sla}</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function renderCrewsList() {
+            const container = document.getElementById('responseCrewsList');
+            container.innerHTML = '';
+
+            state.crews.forEach(c => {
+                const row = document.createElement('div');
+                row.className = "p-2.5 rounded-xl bg-steelDark-950 border border-slate-800 space-y-1 text-xs";
+                row.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-200">${c.name}</span>
+                        <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">${c.status}</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                        <span>Lead: ${c.lead}</span>
+                        <span>${c.loc}</span>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function renderStandardsList() {
+            const container = document.getElementById('engineeringStandardsList');
+            container.innerHTML = '';
+
+            state.standards.forEach(s => {
+                const card = document.createElement('div');
+                card.className = "p-2.5 rounded-xl bg-steelDark-950 border border-slate-800 space-y-0.5 text-xs";
+                card.innerHTML = `
+                    <span class="font-bold text-cyan-300 block">${s.title}</span>
+                    <span class="text-[10px] text-slate-400 font-mono block">${s.limit}</span>
+                    <span class="text-[10px] font-mono font-bold ${s.status.includes('Alert') ? 'text-sensorAmber-400' : 'text-healthGreen-400'}">${s.status}</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // AI Structural Diagnostics (Powered by Gemini)
+        async function submitAiStructuralQuery() {
+            const input = document.getElementById('aiQueryInput');
+            const query = input.value.trim();
+            if (!query) return;
+
+            input.value = '';
+            appendAiChatMessage('user', query);
+
+            const btn = document.getElementById('btnSubmitAiQuery');
+            btn.disabled = true;
+
+            const chatHistory = document.getElementById('chatMessageHistory');
+            const thinking = document.createElement('div');
+            thinking.id = 'aiThinkingIndicator';
+            thinking.className = "p-3 rounded-xl bg-steelDark-950 border border-slate-800 text-slate-400 text-xs italic flex items-center gap-2";
+            thinking.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-infra-400"></i> Calculating structural stress tensors, ASCE limits & failure probabilities...`;
+            chatHistory.appendChild(thinking);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            const systemPrompt = `You are InfraGuard Copilot, the lead Civil & Structural Engineering AI specializing in infrastructure health monitoring (Bridges, Tunnels, Aqueducts, High-Voltage Grids).
+Provide technical, actionable guidance quoting ASCE, Eurocode, or FEMA safety protocols.
+Formulate recommendations in 2 concise paragraphs with zero fluff. Focus on immediate containment, NDT testing, and predictive retrofits.`;
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: query }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                const aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                removeThinkingIndicator();
+                if (aiReply) {
+                    appendAiChatMessage('assistant', aiReply);
+                    playChime('success');
+                } else {
+                    throw new Error("Empty AI response");
+                }
+            } catch (err) {
+                removeThinkingIndicator();
+                console.warn("Using offline structural heuristics:", err);
+                const heuristic = generateHeuristicStructuralAdvice(query);
+                appendAiChatMessage('assistant', heuristic);
+                playChime('success');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function generateHeuristicStructuralAdvice(query) {
+            const lower = query.toLowerCase();
+            if (lower.includes('bridge') || lower.includes('cable') || lower.includes('strain')) {
+                return `**Structural Evaluation for Suspension Pier Stay Cables:**\nMicrostrain telemetry peaking at 640 $\mu\epsilon$ approaches the 750 $\mu\epsilon$ design threshold under heavy commuter freight. To prevent high-cycle fatigue cracking at the anchorage plate, immediately derate outer truck lanes and initiate magnetic flux leakage (MFL) testing to detect interior wire breakages without dismantling cable sheathing.`;
+            } else if (lower.includes('tunnel') || lower.includes('pore') || lower.includes('water')) {
+                return `**Underground Transit Tunnel Integrity Assessment:**\nPore water pressure anomalies exceeding 1.2 Bar correlate with segmented lining joint displacement. We recommend immediate high-pressure hydrophilic polyurethane grout injection at Segment 14 rings and deploying InSAR satellite interferometry to verify ground subsidence above the transit envelope.`;
+            } else {
+                return `**Metropolitan Structural Risk Mitigation:**\nFor prestressed concrete assets, monitor acoustic emission (AE) hit rates for spalling signatures. Deploy fiber Bragg grating (FBG) strain arrays to verify load distribution and schedule carbon-fiber composite wrap retrofits to extend remaining useful life (RUL) by 15+ years.`;
+            }
+        }
+
+        function sendQuickAiQuery(text) {
+            document.getElementById('aiQueryInput').value = text;
+            submitAiStructuralQuery();
+        }
+
+        function appendAiChatMessage(sender, text) {
+            const chatHistory = document.getElementById('chatMessageHistory');
+            const bubble = document.createElement('div');
+
+            if (sender === 'user') {
+                bubble.className = "p-3 rounded-xl bg-steelDark-850 border border-slate-700 text-slate-100 text-xs ml-4 text-right";
+                bubble.innerHTML = `<span class="text-infra-400 font-bold block text-[10px] mb-0.5">Civil Engineer</span>${text}`;
+            } else {
+                bubble.className = "p-3.5 rounded-xl bg-steelDark-950 border border-slate-800 text-slate-300 text-xs mr-2 leading-relaxed space-y-1";
+                bubble.innerHTML = `
+                    <div class="flex items-center gap-1.5 text-infra-400 font-bold text-[10px]">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>InfraGuard Diagnostic Core</span>
+                    </div>
+                    <p class="text-[11px] leading-relaxed text-slate-300">${text.replace(/\n/g, '<br>')}</p>
+                `;
+            }
+            chatHistory.appendChild(bubble);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function removeThinkingIndicator() {
+            const el = document.getElementById('aiThinkingIndicator');
+            if (el) el.remove();
+        }
+
+        // Anomaly Simulation & Incident Escalation
+        function triggerSimulatedStructuralAnomaly() {
+            const bridge = state.assets[0];
+            bridge.shi = 62;
+            bridge.strain = '748 microstrain (Critical)';
+            bridge.status = 'Critical Cable Anchor Shear Stress';
+            bridge.statusColor = 'text-hazardRed-400';
+            bridge.badge = 'bg-hazardRed-950 text-hazardRed-400 border border-hazardRed-800';
+
+            state.activeAnomalies = 3;
+            state.shiOverall = 89.2;
+            document.getElementById('headerShiScore').textContent = '89.2 / 100 • Critical Alert';
+            document.getElementById('statActiveAnomalies').textContent = '3 Flagged';
+
+            plotAssetMarkers();
+            renderAssetsList();
+            renderPredictiveAssetList();
+            playChime('alert');
+            showInfraToast("CRITICAL ANOMALY: East Gateway Bridge Stay Cable microstrain exceeded 740!", "fa-triangle-exclamation");
+        }
+
+        function openEmergencyLockoutModal() {
+            document.getElementById('lockoutModal').classList.remove('hidden');
+        }
+
+        function closeEmergencyLockoutModal() {
+            document.getElementById('lockoutModal').classList.add('hidden');
+        }
+
+        function executeEmergencyContainmentAction() {
+            closeEmergencyLockoutModal();
+            playChime('alert');
+            showInfraToast("EMERGENCY CONTAINMENT ACTIVE: Freight diverted to bypass ring road.", "fa-shield-halved");
+        }
+
+        function openNewWorkOrderModal() {
+            document.getElementById('workOrderModal').classList.remove('hidden');
+        }
+
+        function closeNewWorkOrderModal() {
+            document.getElementById('workOrderModal').classList.add('hidden');
+        }
+
+        function submitNewWorkOrder() {
+            const asset = document.getElementById('modalOrderAsset').value;
+            const title = document.getElementById('modalOrderTitle').value.trim() || 'Urgent non-destructive structural inspection';
+            const priority = document.getElementById('modalOrderPriority').value;
+
+            const newId = `WO-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+            state.workOrders.unshift({
+                id: newId,
+                asset: asset,
+                title: title,
+                assignedCrew: 'Team Alpha: Advanced NDT & Acoustic',
+                sla: priority.includes('24') ? '24 Hours remaining' : '72 Hours remaining',
+                status: 'Dispatched to Dispatch Grid',
+                statusBadge: 'bg-cyan-950 text-cyan-300 border border-cyan-800'
+            });
+
+            renderWorkOrders();
+            closeNewWorkOrderModal();
+            playChime('success');
+            showInfraToast(`Work Order ${newId} dispatched to field crew!`, 'fa-truck-fast');
+        }
+
+        function exportPredictiveEngineeringReport() {
+            playChime('success');
+            showInfraToast("Capital Expenditure & Lifespan Report exported to municipal registry", "fa-file-pdf");
+        }
+
+        // Custom Toast Notifications
+        let toastTimer = null;
+        function showInfraToast(title, icon = 'fa-check') {
+            const toast = document.getElementById('infraToast');
+            document.getElementById('toastTitleText').textContent = title;
+            document.getElementById('toastIconContainer').innerHTML = `<i class="fa-solid ${icon}"></i>`;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(hideInfraToast, 4000);
+        }
+
+        function hideInfraToast() {
+            const toast = document.getElementById('infraToast');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }
+    </script>
+</body>
+</html>
